@@ -5,7 +5,9 @@ import { ArrowRightIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import Link from 'next/link';
 import { lusitana } from '@/app/ui/fonts';
-import { supabase } from '@/lib/supabaseClient'; // make sure you have this file
+import { supabase } from '../lib/supabaseClient';
+
+import bcrypt from 'bcryptjs';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -19,14 +21,15 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage('');
 
+    // Validate passwords
     if (formData.password !== formData.confirm_password) {
       setMessage('Passwords do not match!');
       return;
@@ -34,30 +37,36 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    // Insert into Supabase applicants table
-    const { data, error } = await supabase.from('applicants').insert([
-      {
-        fullname: formData.full_name,
-        email: formData.email,
-        phone: formData.phone,
-        level: formData.level,
-        password: formData.password, // ⚠️ hash later for production
-      },
-    ]);
+    try {
+      // Hash the password before saving
+      const hashedPassword = await bcrypt.hash(formData.password, 10);
 
-    if (error) {
-      console.error(error);
-      setMessage('Error: ' + error.message);
-    } else {
-      setMessage('Registration successful! 🎉');
-      setFormData({
-        full_name: '',
-        email: '',
-        phone: '',
-        level: '',
-        password: '',
-        confirm_password: '',
-      });
+      const { data, error } = await supabase.from('applicants').insert([
+        {
+          fullname: formData.full_name,
+          email: formData.email,
+          phone: formData.phone,
+          level: formData.level,
+          password: hashedPassword,
+        },
+      ]);
+
+      if (error) {
+        setMessage('Error: ' + error.message);
+      } else {
+        setMessage('Registration successful! 🎉');
+        setFormData({
+          full_name: '',
+          email: '',
+          phone: '',
+          level: '',
+          password: '',
+          confirm_password: '',
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage('Unexpected error occurred.');
     }
 
     setLoading(false);
@@ -68,35 +77,23 @@ export default function RegisterPage() {
       {/* Header */}
       <div className="flex h-24 items-center justify-between rounded-lg bg-blue-800 px-6 text-white md:h-28">
         <div className="flex items-center gap-3">
-          <Image
-            src="/mzu-logo.png"
-            alt="Mzuzu University Logo"
-            width={50}
-            height={50}
-          />
+          <Image src="/mzu-logo.png" alt="Mzuzu University Logo" width={50} height={50} />
           <h1 className="text-2xl font-semibold">Mzuzu University</h1>
         </div>
-        <h2 className="text-sm md:text-lg font-light">
-          Online Application Portal
-        </h2>
+        <h2 className="text-sm md:text-lg font-light">Online Application Portal</h2>
       </div>
 
       {/* Main Registration Section */}
       <div className="mt-8 flex grow flex-col items-center justify-center md:flex-row">
         {/* Form */}
         <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg md:w-2/5">
-          <h2
-            className={`${lusitana.className} mb-6 text-center text-2xl font-bold text-blue-800`}
-          >
+          <h2 className={`${lusitana.className} mb-6 text-center text-2xl font-bold text-blue-800`}>
             Applicant Registration
           </h2>
 
           <form className="space-y-5" onSubmit={handleSubmit}>
-            {/* Full Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Full Name</label>
               <input
                 type="text"
                 name="full_name"
@@ -108,11 +105,8 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Email Address
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Email Address</label>
               <input
                 type="email"
                 name="email"
@@ -124,11 +118,8 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Phone */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Phone Number
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Phone Number</label>
               <input
                 type="tel"
                 name="phone"
@@ -140,11 +131,8 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Programme Level */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Programme Level
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Programme Level</label>
               <select
                 name="level"
                 value={formData.level}
@@ -159,11 +147,8 @@ export default function RegisterPage() {
               </select>
             </div>
 
-            {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Password</label>
               <input
                 type="password"
                 name="password"
@@ -175,11 +160,8 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Confirm Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
               <input
                 type="password"
                 name="confirm_password"
@@ -191,7 +173,6 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
@@ -201,17 +182,12 @@ export default function RegisterPage() {
               <ArrowRightIcon className="w-5" />
             </button>
 
-            {message && (
-              <p className="mt-3 text-center text-sm text-gray-700">{message}</p>
-            )}
+            {message && <p className="mt-3 text-center text-sm text-gray-700">{message}</p>}
           </form>
 
           <p className="mt-6 text-center text-sm text-gray-600">
             Already have an account?{' '}
-            <Link
-              href="/login"
-              className="font-medium text-blue-700 hover:underline"
-            >
+            <Link href="/login" className="font-medium text-blue-700 hover:underline">
               Login
             </Link>
           </p>

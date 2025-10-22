@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import Link from 'next/link';
-import { lusitana } from '@/app/ui/fonts';
+
 import { supabase } from '../lib/supabaseClient';
 
 import bcrypt from 'bcryptjs';

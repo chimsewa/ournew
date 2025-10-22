@@ -6,7 +6,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { supabase } from '../lib/supabaseClient';
-
 import bcrypt from 'bcryptjs';
 
 export default function RegisterPage() {
@@ -29,7 +28,6 @@ export default function RegisterPage() {
     e.preventDefault();
     setMessage('');
 
-    // Validate passwords
     if (formData.password !== formData.confirm_password) {
       setMessage('Passwords do not match!');
       return;
@@ -38,7 +36,6 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Hash the password before saving
       const hashedPassword = await bcrypt.hash(formData.password, 10);
 
       const { data, error } = await supabase.from('applicants').insert([
@@ -87,7 +84,7 @@ export default function RegisterPage() {
       <div className="mt-8 flex grow flex-col items-center justify-center md:flex-row">
         {/* Form */}
         <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg md:w-2/5">
-          <h2 className={`${lusitana.className} mb-6 text-center text-2xl font-bold text-blue-800`}>
+          <h2 className="mb-6 text-center text-2xl font-bold text-blue-800">
             Applicant Registration
           </h2>
 
